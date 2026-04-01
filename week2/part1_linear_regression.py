@@ -1,13 +1,38 @@
-from sklearn.datasets import fetch_california_housing
-import numpy as np
-import matplotlib
-matplotlib.use('TkAgg')
-import matplotlib.pyplot as plt
-import pandas as pd
+from sklearn.datasets import fetch_california_housing # skit-learn constains numerous datasets for testing and learning purposes.
+import numpy as np # Numerical computing.
+import matplotlib # Creating Data visualizations.
+matplotlib.use('TkAgg') # Use TkAgg backend for matplotlib to enable plotting in environments without a display server.
+import matplotlib.pyplot as plt # Creating Data visualizations.
+import pandas as pd # Data handling & manipulation.
 
+
+# dataset is loaded using inbuild fetch_california_housing() function from sklearn.datasets.
+# This dataset contains information about California housing prices and is commonly used for regression tasks in machine learning.
 dataset = fetch_california_housing()
+
+
+
+# Dataframe is a 2D data structure in pandas that can hold data of different types (like integers, floats, strings, etc.) in columns. 
+# It is similar to a table in a relational database or an Excel spreadsheet. 
+# Each column in a DataFrame can be thought of as a Series, and the entire DataFrame can be thought of as a collection of Series objects. 
+# The 'columns' parameter is used to specify the names of the columns in the DataFrame
 df = pd.DataFrame(dataset.data, columns=dataset.feature_names)
 
+
+
+
+# Function to normalize the data using mean and standard deviation.
+# -----------   Why Normalization?   ----------------
+# Take Example :-----  Number of Bedrooms: Usually a small number (1, 2, 3, 4).Square Footage: A much larger number (800, 1500, 3000,2000).
+# Because 3000 is mathematically much larger than 3, the model might mistakenly think the square footage is 1000 times more important than the number of bedrooms.
+#  ----------   How Normalization Fixes This ------
+# To normalize, we squeeze both sets of numbers into small numbers usually between and around -1 and 1.
+# Take the above two examples as input features and we will apply normalization to them.
+# mean_bedrooms = 2.5, std_bedrooms = 1.0, mean_square_footage = 1824, std_square_footage = 1000.
+# Normalized Bedroom  = (3 - 2.5) / 1.0 = 0.5, Normalized Square Footage = (3000 - 1500) / 1000 = 1.5.
+# Feature          Original                ValuesStandardized (normalized)
+# Bedrooms        [1, 2, 3, 4]               [-1.34, -0.45, 0.45, 1.34]
+# Sq Footage      [800, 1500, 3000, 2000]    [-1.28, -0.41, 1.47, 0.22]
 def normalize(X):
     X_arr = np.array(X)
     if len(X_arr.shape) == 1:
@@ -21,6 +46,9 @@ X_all, mean_all, std_all = normalize(df.values)
 X_one, mean_one, std_one = normalize(df[['MedInc']].values)
 y = dataset.target.reshape(-1, 1)
 
+
+
+# Class definition for linear regression model.
 class linearRegression:
     def __init__(self, learning_rate=0.1, iterations=1000):
         self.lr = learning_rate

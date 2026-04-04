@@ -8,9 +8,10 @@ from sklearn.datasets import load_diabetes # skit-learn constains numerous datas
 dataset=load_diabetes() 
 
 
- # Dataframe is a 2D data structure in pandas that can hold data of different types (like integers, floats, strings, etc.) in columns. 
- # It is similar to a table in a relational database or an Excel spreadsheet. Each column in a DataFrame can be thought of as a Series, and the entire DataFrame can be thought of as a collection of Series objects. 
- # The 'columns' parameter is used to specify the names of the columns in the DataFrame, which are taken from the 'feature_names' attribute of the dataset.
+""" Dataframe is a 2D data structure in pandas that can hold data of different types (like integers, floats, strings, etc.) in columns. 
+ It is similar to a table in a relational database or an Excel spreadsheet. Each column in a DataFrame can be thought of as a Series, and the entire DataFrame can be thought of as a collection of Series objects. 
+ The 'columns' parameter is used to specify the names of the columns in the DataFrame, which are taken from the 'feature_names' attribute of the dataset."""
+
 df=pd.DataFrame(dataset.data,columns=dataset.feature_names)
 df['diabetic']=dataset.target # dataset.target contains the target variable.
 print(df.columns) # prints ['age', 'sex', 'bmi', 'bp', 's1', 's2', 's3', 's4', 's5', 's6','diabetic'] -- 10 feature input and 1 label ('diabetic') variable.
@@ -64,9 +65,10 @@ for epoch in range(100):
         x_i=X_train.iloc[i].values.reshape(-1,1) # .reshape this [5.1, 3.5, 1.4, 0.2] to [[5.1],[3.5],[1.4],[0.2]]..we need to reshape it because we want to perform matrix multiplication with weights .
         y_i=y_train.iloc[i] # y_i is the actual label. 
 
-        # predictions is output given by our model for the input x_i.
-        # we take transpose of weights matrix(1x10) and then do dot product with input features (10x1).
-        #It give (1x1) result and then we add bias to it to get final prediction.
+        """ predictions is output given by our model for the input x_i.
+         we take transpose of weights matrix(1x10) and then do dot product with input features (10x1).
+        It give (1x1) result and then we add bias to it to get final prediction."""
+
         prediction=(weights.T.dot(x_i) + bias).item()
 
 

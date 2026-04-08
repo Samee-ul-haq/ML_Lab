@@ -54,21 +54,19 @@ def normal_equation(X, y):
 
 
 
-def gradient_descent(X, y, lr=0.01, epochs=10000, seed=42):
+def gradient_descent(X, y, lr=0.01, iterations=10000, seed=42):
     """Batch gradient descent with a fixed seed for reproducibility."""
     np.random.seed(seed)                         #  fixed seed → stable params
     m     = len(y)
     theta = np.random.randn(X.shape[1])
 
 
-    """ As lr=0.01 means our model is taking very small steps to move towards lowest error points.
-     IF we take small number(or just 1) epochs it will never reach to lowest loss point.
-     so we take large epochs so that our model will take large number of small steps.
-     Q.. Why can we just run 1000 epochs on directly calculating gradients without passing through
-     entire dataset each time??
-
+    """ 
+    As lr=0.01 means our model is taking very small steps to move towards lowest error points.
+     If we take small number(or just 1) iterations it will never reach to lowest loss point.
+     so we take large iterations so that our model will take large number of small steps.
      """
-    for _ in range(epochs):
+    for _ in range(iterations):
         grad  = (2/m) * X.T @ (X @ theta - y)
         theta -= lr * grad
     return theta
@@ -77,13 +75,22 @@ def gradient_descent(X, y, lr=0.01, epochs=10000, seed=42):
 
 # ── 4. EVALUATE & BUILD RESULTS ────────────────────────────────────────────────
 def evaluate(name, X_train, y_train, X_test, y_test, method, lr=None, epochs=None):
+    # Keeping the time just to take note of how much time gradient_descent is taking to update weights anf biasis.
     t0 = time.perf_counter()
+
+
     if method == "Normal Equation":
         theta = normal_equation(X_train, y_train)
+
     else:
         theta = gradient_descent(X_train, y_train, lr=lr, epochs=epochs)
     elapsed = time.perf_counter() - t0
+    
 
+    """
+    Calculating mean square error for the train and test dataset.By calculating mean square error
+    we just want to calculate how much(magnitude) our model differ from the actual value.
+    """
     train_mse = mean_squared_error(y_train, X_train @ theta)
     test_mse  = mean_squared_error(y_test, X_test @ theta)
 
@@ -93,6 +100,7 @@ def evaluate(name, X_train, y_train, X_test, y_test, method, lr=None, epochs=Non
     else:
         remark = f"Iterative; lr={lr}, epochs={epochs}; may need tuning"
 
+    # return the calulated ouputs..
     return {
         "Method":         f"{name} — {method}",
         "Train MSE":      round(train_mse, 4),
@@ -149,10 +157,10 @@ print_param_table("Model 1 — Linear",
 print_param_table("Model 2 — Cubic Polynomial",
                   param_labels_m2, rows[2]["_theta"], rows[3]["_theta"])
 
+
+
 # ── 7. PLOTS ( visualisation was completely missing) ──────────────────────
 X_line = np.linspace(-3, 3, 300)
-
-
 
 
 # Prediction curves for plotting
@@ -168,6 +176,8 @@ titles  = ["Model 1 — Linear", "Model 2 — Cubic Polynomial"]
 pred_fns = [predict_m1, predict_m2]
 ne_thetas = [rows[0]["_theta"], rows[2]["_theta"]]
 gd_thetas = [rows[1]["_theta"], rows[3]["_theta"]]
+
+
 
 for ax, title, fn, ne_t, gd_t in zip(axes, titles, pred_fns, ne_thetas, gd_thetas):
     ax.scatter(X_train, y_train, s=18, alpha=0.5, color='#888', label='Train data')

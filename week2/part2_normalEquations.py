@@ -42,7 +42,7 @@ X_test_m2   = np.c_[np.ones(len(X_test)),  poly.transform(X_test.reshape(-1,1))]
 """
 Normal Equation and Gradient Descent implementations for linear regression.
 The normal equation provides a closed-form solution, while gradient descent is an iterative optimization algorithm.
-Equating the loss fi=unction's gradient to zero and solving for θ gives us the normal equation, which can be computed directly without iterations.
+Equating the loss finction's gradient to zero and solving for θ gives us the normal equation, which can be computed directly without iterations.
 Gradient descent, on the other hand, starts with an initial guess for θ and iteratively updates
 it in the direction of the steepest descent of the loss function, which requires tuning of learning rate and number of iterations.
 Normal equation is computationally efficient for small datasets but can be slow for large datasets due to matrix inversion,
@@ -59,6 +59,15 @@ def gradient_descent(X, y, lr=0.01, epochs=10000, seed=42):
     np.random.seed(seed)                         #  fixed seed → stable params
     m     = len(y)
     theta = np.random.randn(X.shape[1])
+
+
+    """ As lr=0.01 means our model is taking very small steps to move towards lowest error points.
+     IF we take small number(or just 1) epochs it will never reach to lowest loss point.
+     so we take large epochs so that our model will take large number of small steps.
+     Q.. Why can we just run 1000 epochs on directly calculating gradients without passing through
+     entire dataset each time??
+
+     """
     for _ in range(epochs):
         grad  = (2/m) * X.T @ (X @ theta - y)
         theta -= lr * grad

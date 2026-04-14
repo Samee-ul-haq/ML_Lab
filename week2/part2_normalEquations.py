@@ -101,6 +101,7 @@ def evaluate(name, X_train, y_train, X_test, y_test, method, lr=None, epochs=Non
         remark = f"Iterative; lr={lr}, epochs={epochs}; may need tuning"
 
     # return the calulated ouputs..
+    # Read the next few lines of code below.It is simple.Assigning values to variables and calling functions.
     return {
         "Method":         f"{name} — {method}",
         "Train MSE":      round(train_mse, 4),
@@ -182,7 +183,7 @@ gd_thetas = [rows[1]["_theta"], rows[3]["_theta"]]
 for ax, title, fn, ne_t, gd_t in zip(axes, titles, pred_fns, ne_thetas, gd_thetas):
     ax.scatter(X_train, y_train, s=18, alpha=0.5, color='#888', label='Train data')
     ax.scatter(X_test,  y_test,  s=18, alpha=0.5, color='#aaa', marker='x', label='Test data')
-    ax.plot(X_line, fn(ne_t, X_line), color='#1a5fa8', linewidth=2.5,
+    ax.plot(X_line, fn(ne_t, X_line), color="#307aca", linewidth=2.5,
             label=f'Normal Eq  (test MSE={mean_squared_error(y_test, fn(ne_t, X_test)):.2f})')
     ax.plot(X_line, fn(gd_t, X_line), color='#c0392b', linewidth=2,
             linestyle='--',

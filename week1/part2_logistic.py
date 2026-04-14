@@ -5,10 +5,11 @@ import matplotlib.pylab as plt
 from sklearn.datasets import load_diabetes
 import math
 
-# Dataframe is a 2D data structure in pandas that can hold data of different types (like integers, floats, strings, etc.) in columns. 
-# It is similar to a table in a relational database or an Excel spreadsheet. Each column in a DataFrame can be thought of as a Series, and the entire DataFrame can be thought of as a collection of Series objects. 
-# The 'columns' parameter is used to specify the names of the columns in the DataFrame, which are taken from the 'feature_names' attribute of the dataset.
-
+""" 
+Dataframe is a 2D data structure in pandas that can hold data of different types (like integers, floats, strings, etc.) in columns. 
+It is similar to a table in a relational database or an Excel spreadsheet. Each column in a DataFrame can be thought of as a Series, and the entire DataFrame can be thought of as a collection of Series objects. 
+The 'columns' parameter is used to specify the names of the columns in the DataFrame, which are taken from the 'feature_names' attribute of the dataset.
+"""
 dataset=load_diabetes()
 df=pd.DataFrame(dataset.data,columns=dataset.feature_names)
 df['daibetic']=dataset.target
@@ -16,10 +17,11 @@ df['daibetic']=dataset.target
 X=df.drop(columns='daibetic') 
 y=df['daibetic']
 
-# Why to user a threshold?
-# Our perceptron model is made of only one neuron and it adjusts its weights and bias to find better decision boundary.
-# It outputs in binary values 0 & 1.SO we are using threshold to convert the continuous output of our model into binary output.
-
+"""
+ Why to user a threshold?
+ Our perceptron model is made of only one neuron and it adjusts its weights and bias to find better decision boundary.
+ It outputs in binary values 0 & 1.SO we are using threshold to convert the continuous output of our model into binary output.
+"""
 threshold=np.median(y) 
 y_binary=np.where(y>threshold,1,0) # converting continuous target variable into binary variable based on the threshold value. 
 y=pd.Series(y_binary)
@@ -54,22 +56,26 @@ def binary_cross_entropy(y_true, y_prob):
     return -np.mean(y_true * np.log(y_prob + eps) +
                     (1 - y_true) * np.log(1 - y_prob + eps))
 
-""" defining logistic regression function --- 
+""" 
+defining logistic regression function --- 
  Input parameters:
  X: Input features for training the model.
  y: Target variable for training the model.
  learning_rate: A hyperparameter that controls the step size of parameter updates during gradient descent.
  epochs: The number of times the entire training dataset will be passed through the model during training.
- batch_size: The number of samples processed before the model's parameters are updated during training."""
+ batch_size: The number of samples processed before the model's parameters are updated during training.
+ """
 
 def logisticRegression(X,y,learning_rate,epochs,batch_size): 
     X=np.array(X)
     y=np.array(y).reshape(-1, 1)
     m=len(X)
 
-    # we will also include bias in theta matrix, that will increase the no of rows by 1.
-    # new dimension of theta matrix = no of input features + 1 (Another way to include bias nothing more)
-    # ADDED FIX: Multiplied by 0.01 for smaller initial weights to prevent early saturation of the sigmoid function.
+    """ 
+    we will also include bias in theta matrix, that will increase the no of rows by 1.
+     new dimension of theta matrix = no of input features + 1 (Another way to include bias nothing more)
+     Multiplied by 0.01 for smaller initial weights to prevent early saturation of the sigmoid function.
+    """
     theta=np.random.randn(11,1) * 0.01
 
     # we will add a column of 1's to Input features for bias term.
@@ -86,9 +92,11 @@ def logisticRegression(X,y,learning_rate,epochs,batch_size):
         X_shuffled=X_bias[indxs]
         y_shuffled=y[indxs]
 
-        # Inside the each epoch,we iterate through the entire shuffled training dataset.
-        # We process the data in batches of size 'batch_size' to update the model parameters (theta) using gradient descent.
-        # which means after every batch we are updating the theta values towards the direction of minimum cost function.
+        """ 
+        Inside the each epoch,we iterate through the entire shuffled training dataset.
+         We process the data in batches of size 'batch_size' to update the model parameters (theta) using gradient descent.
+         which means after every batch we are updating the theta values towards the direction of minimum cost function.
+        """
         for i in range(0,m,batch_size):
             X_batch=X_shuffled[i:i+batch_size]
             y_batch=y_shuffled[i:i+batch_size]
@@ -96,7 +104,7 @@ def logisticRegression(X,y,learning_rate,epochs,batch_size):
             # calculating predicted probabilities using sigmoid function.
             probs = sigmoid(X_batch.dot(theta))
             
-            # ADDED FIX: Corrected gradient calculation for Binary Cross-Entropy
+            # Corrected gradient calculation for Binary Cross-Entropy
             # The previous linear regression gradient formula is replaced with the logistic gradient.
             gradients = (1 / len(X_batch)) * X_batch.T.dot(probs - y_batch)
             
@@ -109,11 +117,11 @@ def logisticRegression(X,y,learning_rate,epochs,batch_size):
             
             theta=theta-learning_rate*gradients
 
-        # ADDED FIX: calculating predictions after updating all the theta values -- for one epoch.
+        # calculating predictions after updating all the theta values -- for one epoch.
         # Must apply sigmoid to get probabilities for the cost function.
         predictions = sigmoid(X_bias.dot(theta))
         
-        # ADDED FIX: calculating cost function using the properly defined binary_cross_entropy method.
+        # calculating cost function using the properly defined binary_cross_entropy method.
         cost = binary_cross_entropy(y, predictions)
         cost_history.append(cost)
         
@@ -140,11 +148,11 @@ y_test=np.array(y_test).reshape(-1,1)
 m=len(X_test)
 X_test_bias=np.c_[np.ones((m,1)), X_test]
 
-# ADDED FIX: Convert testing predictions into probabilities, then into binary labels (0 or 1)
+# Convert testing predictions into probabilities, then into binary labels (0 or 1)
 probs_test = sigmoid(X_test_bias.dot(theta_final))
 y_pred = (probs_test >= 0.5).astype(int)
 
-# ADDED FIX: Display accuracy and classification metrics rather than linear residual loss
+# Display accuracy and classification metrics rather than linear residual loss
 accuracy = np.mean(y_pred == y_test)
 print(f"Final Test Accuracy: {accuracy:.2%}")
 

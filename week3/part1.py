@@ -7,20 +7,28 @@ import pandas as pd
 
 
 # 1. LOAD DATASET & USE TWO FEATURES FOR A RICH REGRESSION PROBLEM
-raw   = fetch_california_housing()
-df    = pd.DataFrame(raw.data, columns=raw.feature_names)
+raw  = fetch_california_housing()
+df   = pd.DataFrame(raw.data, columns=raw.feature_names)
 
 
 # Use MedInc (median income) as our single input — strong linear signal + noise
 # Makes bias/variance tradeoff clearly visible across polynomial degrees
 np.random.seed(42)
+"""
+ np.random(a,size,replace).
+ len(df) --- number of rows in our dataset
+ 300     ----  number of samples to be taken from dataset
+ replace if true means repitition allowed else not allowed.
+ Matrix inversion has a computational complexity of roughly O(N^3). 
+ Running this on all ~20,000 rows for high-degree polynomials would slow down our computer significantly
+"""
 sample_idx = np.random.choice(len(df), 300, replace=False)   # keep it manageable
 X_raw = df['MedInc'].values[sample_idx]
 y_raw = raw.target[sample_idx]
 
 
 # Sort by X so regression curves plot cleanly
-#  Sorting the x-axis forces the plotter to draw the line smoothly from left to right.
+# Sorting the x-axis forces the plotter to draw the line smoothly from left to right.
 order  = np.argsort(X_raw)
 X_raw  = X_raw[order]
 y_raw  = y_raw[order]
@@ -38,13 +46,16 @@ print(f"Validation: {len(X_val)} samples\n")
 
 # 3. FROM-SCRATCH HELPERS  (no sklearn regression)
 def make_poly_features(x, degree):
-    """Build [1, x, x², …, x^degree] design matrix  (n × degree+1)."""
+    """Build [1, x, x², …, x^degree] design matrix  (n × degree+1).
+    This expression generates a matrix of polynomial features by stacking powers of x from 0 to the specified degree as separate columns.
+    """
     return np.column_stack([x**d for d in range(degree + 1)])
 
 def normal_equation(X, y):
     """
+    Here  we calcualte inverse.This may be computitionally expensive if we have not done random sampling.
     Exact closed-form solution: θ = (XᵀX)⁻¹ Xᵀy
-    Normal equation is used to get the optimal θ values in a single step.
+    Normal equation is used to get the optimal θ values in a single step although it is computationally expensive.
     """
     return np.linalg.pinv(X.T @ X) @ X.T @ y
 
@@ -69,6 +80,8 @@ print(f"{'Degree':<8} {'Train MSE':>12} {'Val MSE':>12}  Diagnosis")
 print("─" * 55)
 
 
+# iterating over the DEGREES(1,2,3,4,5) as d to get polynomail features of degree 'd' and
+# get the values of different thetas,train_errors & val_errors...
 for d in DEGREES:
     X_tr_poly = make_poly_features(X_train, d)
     X_vl_poly = make_poly_features(X_val,   d)

@@ -5,25 +5,40 @@ import matplotlib.pyplot as plt
 import warnings
 warnings.filterwarnings('ignore')
 
-# ════════════════════════════════════════════════
-# 1. DATASET
-# ════════════════════════════════════════════════
+"""
+np.linspace(start,end,n) gives an array of size 'n'...evenly separated values form start - end.
+we try to create a dataset and make our algorithm to find the best fit model.
+Since in reality there are some noise due to human errors like typos etc.
+So to mimic the real world data we will add some noise by generating 'n' random numbers between 0 & 3.
+By adding this noise to y_true, we get y, our final target variable.
+ X_raw and y are what you will actually feed into your model, challenging it to ignore the noise and find the hidden cubic curve.
+"""
 np.random.seed(42)
 n = 80
 X_raw = np.linspace(-3, 3, n)
 y_true = 0.5 * X_raw**3 - X_raw**2 + 2 * X_raw + 1
 y = y_true + np.random.normal(0, 3.0, n)
 
+
+
 # Split 70 / 30
 split = int(0.7 * n)
 X_train_raw, X_val_raw = X_raw[:split], X_raw[split:]
 y_train,      y_val     = y[:split],      y[split:]
+
+
 
 # ── Build degree-7 polynomial feature matrix (captures enough complexity) ──
 def poly_features(x, degree=7):
     """Returns [1, x, x^2, ..., x^degree] design matrix (N x (degree+1))."""
     return np.column_stack([x**d for d in range(degree + 1)])
 
+"""
+We will not always know underlying pattern of the data.In this case we know that our data 
+has degree-3 underlying pattern.We take a highly complex model of degree-7 to understand how
+we can put a leash (limit) to our model to prevent our model going crazy (overfitting).
+For that we will use 'lambda' a hyperparameter.It will be disscussed below.
+"""
 DEGREE = 7
 X_train = poly_features(X_train_raw, DEGREE)   # (56, 8)
 X_val   = poly_features(X_val_raw,   DEGREE)   # (24, 8)
@@ -34,6 +49,10 @@ X_plot  = poly_features(X_plot_raw,  DEGREE)
 mean_ = X_train[:, 1:].mean(axis=0)
 std_  = X_train[:, 1:].std(axis=0) + 1e-8
 
+"""
+Normalising the values using mean and standard deviation using the above calulated values.
+The reason to do noramlisation is disscussed earlier in week2_part2..
+"""
 def normalise(X):
     Xn = X.copy().astype(float)
     Xn[:, 1:] = (Xn[:, 1:] - mean_) / std_
@@ -43,37 +62,58 @@ X_train_n = normalise(X_train)
 X_val_n   = normalise(X_val)
 X_plot_n  = normalise(X_plot)
 
+
+"""
+We use(Lambda)—also known as the Regularization Parameter—to act as a leash on the model,
+ preventing it from going crazy. It alters the loss function so the model now has to minimize two 
+ things:Loss = Mean Squared Error + lambda * Complexity Penalty
+ We always move in a way which gives us less Loss.Which means we have to reduce both MSE and 
+ Complexity of model.Keeping lambda low ~Zero means we will allow model to overfit.
+ While keeping it high will mean that our model will underfit by giving less priority to mean square
+ error (by assigning large lambda values means high change in model complexity -->> 
+ high changes in loss.Means reducing model complexity will reduce the loss greatly as priority 
+ (mathematically) given to MSE is low.).So we have to provide a Moderate (0-1) value to the lambda.
+"""
 lambdas = [0, 0.01, 0.1, 1, 10]
 colors  = ['#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#c77dff']
 
-# ════════════════════════════════════════════════════════════════════════════
 # 2. GRADIENT DESCENT IMPLEMENTATIONS
-# ════════════════════════════════════════════════════════════════════════════
 
+
+# Function to calculate mean square loss.
 def mse_loss(y, y_pred):
     return np.mean((y - y_pred) ** 2)
+
 
 # ── Ridge Regression (L2) ────────────────────────────────────────────────────
 def ridge_gradient_descent(X, y, lam, lr=0.01, n_iter=3000):
     """
     Minimises: (1/N) * ||y - Xw||^2  +  λ * ||w||^2
     Gradient : (2/N) * X^T (Xw - y)  +  2λ * w   (bias w[0] not penalised)
+    Ridge regression shrinks the model's weights smoothly by penalizing their squared values.
+    N is the number of rows (samples) and p is the number of columns
     """
     N, p = X.shape
-    w = np.zeros(p)
+    w = np.zeros(p)  # initailizing the weights by zero.
     history = []
 
     for _ in range(n_iter):
         y_pred = X @ w
-        residual = y_pred - y
-        grad = (2 / N) * (X.T @ residual)
-        # L2 penalty — do NOT regularise the bias term (index 0)
+        # Gradient calculating fromulla
+        grad = (2 / N) * (X.T @ ( y_pred - y))
+        """ L2 penalty — do NOT regularise the bias term (index 0) because it doesn't increase the
+           the complexity of the model.It shifts the whole curve Up and Down (it is bias).
+           2*lam*w is the derivative of  λ*||w||^2
+        """        
         penalty = 2 * lam * w
         penalty[0] = 0.0
+        # We update the weights by subtracting the gradient and the penalty, scaled by the learning rate (lr).
         w -= lr * (grad + penalty)
-        history.append(mse_loss(y, X @ w) + lam * np.sum(w[1:]**2))
+        history.append(mse_loss(y, y_pred) + lam * np.sum(w[1:]**2))
 
     return w, history
+
+
 
 # ── Lasso Regression (L1) via Subgradient Descent ────────────────────────────
 def lasso_gradient_descent(X, y, lam, lr=0.005, n_iter=5000):
@@ -89,8 +129,8 @@ def lasso_gradient_descent(X, y, lam, lr=0.005, n_iter=5000):
     for i in range(n_iter):
         lr_i = lr / (1 + 0.001 * i)          # decay
         y_pred = X @ w
-        residual = y_pred - y
-        grad = (2 / N) * (X.T @ residual)
+        # Gradient calculating formulla
+        grad = (2 / N) * (X.T @  (y_pred - y))
         # L1 subgradient — do NOT regularise bias
         penalty = lam * np.sign(w)
         penalty[0] = 0.0
@@ -99,9 +139,9 @@ def lasso_gradient_descent(X, y, lam, lr=0.005, n_iter=5000):
 
     return w, history
 
-# ════════════════════════════════════════════════════════════════════════════
+
+
 # 3. TRAIN ALL MODELS
-# ════════════════════════════════════════════════════════════════════════════
 ridge_results = {}
 lasso_results = {}
 
@@ -125,9 +165,9 @@ for lam in lambdas:
     print(f"{'Lasso':<8} {lam:>6}  {tr_l:>12.4f}  {val_l:>12.4f}  {np.linalg.norm(w_l[1:]):>12.4f}")
     print("-" * 72)
 
-# ════════════════════════════════════════════════════════════════════════════
+
+
 # 4. FIGURE 1 — Ridge Regression Curves
-# ════════════════════════════════════════════════════════════════════════════
 fig, axes = plt.subplots(1, 5, figsize=(23, 5))
 fig.patch.set_facecolor('#0d0d1a')
 
@@ -168,9 +208,10 @@ plt.savefig('fig4_ridge_curves.png', dpi=150, bbox_inches='tight', facecolor='#0
 plt.close()
 print("\nSaved: fig4_ridge_curves.png")
 
-# ════════════════════════════════════════════════════════════════════════════
+
+
+
 # 5. FIGURE 2 — Lasso Regression Curves
-# ════════════════════════════════════════════════════════════════════════════
 fig, axes = plt.subplots(1, 5, figsize=(23, 5))
 fig.patch.set_facecolor('#0d0d1a')
 
@@ -212,9 +253,10 @@ plt.savefig('fig5_lasso_curves.png', dpi=150, bbox_inches='tight', facecolor='#0
 plt.close()
 print("Saved: fig5_lasso_curves.png")
 
-# ════════════════════════════════════════════════════════════════════════════
+
+
+
 # 6. FIGURE 3 — Coefficient Magnitudes (Ridge vs Lasso)
-# ════════════════════════════════════════════════════════════════════════════
 fig, axes = plt.subplots(2, 5, figsize=(23, 8))
 fig.patch.set_facecolor('#0d0d1a')
 feature_names = [f'x^{d}' for d in range(DEGREE + 1)]
@@ -244,9 +286,11 @@ plt.savefig('fig6_coefficients.png', dpi=150, bbox_inches='tight', facecolor='#0
 plt.close()
 print("Saved: fig6_coefficients.png")
 
-# ════════════════════════════════════════════════════════════════════════════
+
+
+
+
 # 7. FIGURE 4 — Loss Convergence Curves
-# ════════════════════════════════════════════════════════════════════════════
 fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 fig.patch.set_facecolor('#0d0d1a')
 
@@ -272,9 +316,11 @@ plt.savefig('fig7_convergence.png', dpi=150, bbox_inches='tight', facecolor='#0d
 plt.close()
 print("Saved: fig7_convergence.png")
 
-# ════════════════════════════════════════════════════════════════════════════
+
+
+
+
 # 8. FIGURE 5 — Ridge vs Lasso Validation Error Comparison
-# ════════════════════════════════════════════════════════════════════════════
 fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 fig.patch.set_facecolor('#0d0d1a')
 
@@ -303,9 +349,11 @@ plt.savefig('fig8_ridge_vs_lasso.png', dpi=150, bbox_inches='tight', facecolor='
 plt.close()
 print("Saved: fig8_ridge_vs_lasso.png")
 
-# ════════════════════════════════════════════════════════════════════════════
+
+
+
+
 # 9. FINAL PARAMETER TABLE
-# ════════════════════════════════════════════════════════════════════════════
 print("\n" + "=" * 72)
 print("FINAL PARAMETER VALUES")
 print("=" * 72)

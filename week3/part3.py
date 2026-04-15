@@ -4,16 +4,18 @@ import matplotlib.pyplot as plt
 from sklearn.datasets import fetch_california_housing
 import pandas as pd
 
-# ═══════════════════════════════════════════════════════════════════════════════
+
 # 1. LOAD DATA  (same dataset & feature as Parts 1 & 2 for consistency)
-# ═══════════════════════════════════════════════════════════════════════════════
 raw = fetch_california_housing()
 df  = pd.DataFrame(raw.data, columns=raw.feature_names)
 
+
 np.random.seed(42)
+# Choosing random numbers without repetition from 0 to length of dataset.
 idx   = np.random.choice(len(df), 300, replace=False)
 X_raw = df['MedInc'].values[idx]
 y_raw = raw.target[idx]
+
 
 # ── 70 / 30 split (train used for CV, test kept completely aside) ──────────
 split   = int(0.7 * len(X_raw))
@@ -24,13 +26,15 @@ print(f"Total samples : 300")
 print(f"Training set  : {len(y_train)} samples  ← used for 5-fold CV")
 print(f"Test set      : {len(y_test)}  samples  ← held out until final evaluation\n")
 
-# ═══════════════════════════════════════════════════════════════════════════════
+
+
 # 2. FROM-SCRATCH HELPERS
-# ═══════════════════════════════════════════════════════════════════════════════
 
 def make_poly_features(x, degree=3):
     """Build design matrix: columns = [1, x, x², x³]"""
     return np.column_stack([x**d for d in range(degree + 1)])
+
+
 
 def ridge_normal_equation(X, y, lam):
     """
@@ -48,21 +52,25 @@ def ridge_normal_equation(X, y, lam):
     I[0, 0]    = 0                          # do not penalise the bias term
     return np.linalg.inv(X.T @ X + lam * I) @ X.T @ y
 
+
+
+
 def mse(y_true, y_pred):
     return np.mean((y_true - y_pred) ** 2)
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# 3. 5-FOLD CROSS-VALIDATION
-#    For every λ:
-#      • Split training data into 5 equal folds
-#      • Train on 4 folds, validate on the remaining 1 fold
-#      • Repeat 5 times (each fold gets a turn as the validation fold)
-#      • Average the 5 validation errors → that is the CV error for this λ
-# ═══════════════════════════════════════════════════════════════════════════════
 
+"""
+ 3. 5-FOLD CROSS-VALIDATION
+    For every λ:
+      • Split training data into 5 equal folds
+      • Train on 4 folds, validate on the remaining 1 fold
+      • Repeat 5 times (each fold gets a turn as the validation fold)
+      • Average the 5 validation errors → that is the CV error for this λ
+"""
 LAMBDAS  = [1e-4, 1e-3, 1e-2, 1e-1, 1, 10]
 K        = 5          # number of folds
 DEGREE   = 3          # polynomial degree (good fit from Part 1)
+
 
 # Build the full polynomial feature matrix for the training set ONCE
 X_train_poly = make_poly_features(X_train_raw, DEGREE)
@@ -82,7 +90,7 @@ for lam in LAMBDAS:
     for fold in range(K):
         # ── Identify validation indices for this fold ──────────────────────
         val_start = fold * fold_size
-        val_end   = val_start + fold_size          # last fold may be slightly larger
+        val_end   = val_start + fold_size           # last fold may be slightly larger
         if fold == K - 1:
             val_end = n_train                       # include any remainder in last fold
 
@@ -108,10 +116,9 @@ for lam in LAMBDAS:
     fold_str = "  ".join(f"{e:8.4f}" for e in fold_errors)
     print(f"{lam:<10}  {fold_str}  {mean_cv_error:12.4f}")
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# 4. SELECT BEST λ
-# ═══════════════════════════════════════════════════════════════════════════════
 
+
+# 4. SELECT BEST λ
 best_idx = np.argmin(cv_mean_errors)
 best_lam = LAMBDAS[best_idx]
 
@@ -119,11 +126,13 @@ print(f"\n{'='*72}")
 print(f"  Best λ found : {best_lam}  (lowest CV MSE = {cv_mean_errors[best_idx]:.4f})")
 print(f"{'='*72}\n")
 
-# ═══════════════════════════════════════════════════════════════════════════════
+
+
+
+
 # 5. RETRAIN ON ENTIRE TRAINING SET  using best λ
 #    Now that we know the best λ from CV, we use ALL 210 training samples
 #    (no fold splitting) to get the best possible final model.
-# ═══════════════════════════════════════════════════════════════════════════════
 
 theta_final = ridge_normal_equation(X_train_poly, y_train, best_lam)
 
@@ -139,10 +148,10 @@ print(f"  Train MSE          : {train_mse:.4f}")
 print(f"  Test  MSE          : {test_mse:.4f}")
 print(f"  Learned parameters : {np.round(theta_final, 4)}")
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# 6. PLOT 1 — Validation Error vs λ  (log scale on x-axis)
-# ═══════════════════════════════════════════════════════════════════════════════
 
+
+
+# 6. PLOT 1 — Validation Error vs λ  (log scale on x-axis)
 fig, axes = plt.subplots(1, 2, figsize=(13, 5))
 fig.suptitle("5-Fold Cross-Validation — Regularisation Parameter Selection", fontsize=13)
 
@@ -186,9 +195,9 @@ ax.annotate(f"Best λ = {best_lam}",
             fontsize=9, color='#e74c3c',
             arrowprops=dict(arrowstyle='->', color='#e74c3c', lw=1.2))
 
-# ═══════════════════════════════════════════════════════════════════════════════
+
+
 # 7. PLOT 2 — Final model fitted curve on train + test data
-# ═══════════════════════════════════════════════════════════════════════════════
 
 ax2 = axes[1]
 X_line     = np.linspace(X_raw.min(), X_raw.max(), 400)
